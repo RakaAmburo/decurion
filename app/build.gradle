@@ -47,6 +47,7 @@ android {
 }
 
 dependencies {
+
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.3.1'
     implementation 'androidx.activity:activity-compose:1.5.1'
@@ -67,4 +68,12 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
     implementation 'com.ebanx:swipe-button:0.8.3'
     implementation 'com.andrognito.patternlockview:patternlockview:1.0.0'
+    implementation 'androidx.work:work-runtime-ktx:2.7.0'
+    implementation 'org.jsoup:jsoup:1.11.1'
+    // Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.1.0'
+    implementation 'com.android.volley:volley:1.2.0'
+    // JSON Parsing
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
 }

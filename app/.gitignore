@@ -1,1 +1,3 @@
 /build
+**/android.bks
+**/SecuredProperties.java
