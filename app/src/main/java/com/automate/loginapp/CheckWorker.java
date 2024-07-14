@@ -86,10 +86,10 @@ public class CheckWorker extends Worker {
     @Override
     public Result doWork() {
         //notify(getApplicationContext());
-        EvaluateResponse er = new EvaluateResponse(getApplicationContext());
+        ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
         RestClient rc = new RestClient(getApplicationContext());
-        rc.request(Request.Method.POST, "217.71.203.118", "8888/exec",
-                null, er);
+        rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
+                null, rp);
         return Result.success();
     }
 }

@@ -1,14 +1,27 @@
 package com.automate.loginapp;
 
-import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkInfo;
@@ -16,13 +29,27 @@ import androidx.work.WorkManager;
 
 import com.android.volley.Request;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class MainActivity extends Activity {
+public class MainActivity extends BaseActivityAndRecognitionListener {
 
     Map<Integer, ButtonHandler> buttons;
+
+    private TextView capturedVoiceCmd;
+    private Button activateSpeechRecognitionButton;
+    private Button checkStatusOnDemand;
+    private ProgressBar progressBar;
+    private SpeechRecognizer speech = null;
+    private Intent recognizerIntent;
+    public ListView statusList;
+    public static ArrayAdapter<String> statusListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,77 +57,261 @@ public class MainActivity extends Activity {
         //createNotificationChannel();
         setContentView(R.layout.activity_main);
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        if (!sp.contains("lastMessage")){
+        if (!sp.contains("lastMessage")) {
             long lastMessage = System.currentTimeMillis();
             sp.edit().putLong("lastMessage", lastMessage).apply();
 
         }
         startPeriodicWork();
 
-
-
-
-        /*Intent intent = new Intent(this, CheckWorker.class);
-         *//*PendingIntent pendingIntent = PendingIntent.getBroadcast(this
-                , 0, intent
-                , PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
-        if (pendingIntent == null){*//*
-            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            PendingIntent newIntent = PendingIntent.getBroadcast(this, 0, intent
-                    , PendingIntent.FLAG_MUTABLE);
-            long interval = 2 * 60 * 1000;
-            long start = System.currentTimeMillis();
-            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, start, interval, newIntent);*/
-        //}
-
-        /*buttons = new HashMap<>();
-         *//* This data would be configurable in a initial instance of the app configuration *//*
-        int[] ids = {R.id.switch_1, R.id.switch_2, R.id.switch_3, R.id.switch_4};
-        String[] names = {"Kitchen", "Living Room", "Garden", "Porch"};
-        *//* This data would be configurable in a initial instance of the app configuration *//*
-
-        WifiManager wifiManager = (WifiManager)
-                this.getSystemService(Context.WIFI_SERVICE);
-        UdpTransceiver udpTransceiver = new UdpTransceiver(wifiManager, 8286,
-                8284);
-        String response = udpTransceiver.sendBroadcast("SWITCH_STATUS");
-
-        String[] statuses = response.split(":");
-        *//* only when there is an error we show a message *//*
-        if (statuses.length != ids.length) {
-            Toast.makeText(getApplicationContext(), response, Toast.LENGTH_SHORT).show();
-        } else {
-            for (int i = 0; i < statuses.length; i++) {
-                Button button = findViewById(ids[i]);
-                ButtonHandler bh = new ButtonHandler(ids[i], i, names[i], button,
-                        statuses[i], udpTransceiver, buttons);
-                buttons.put(ids[i], bh);
+        capturedVoiceCmd = findViewById(R.id.resultMessage);
+        activateSpeechRecognitionButton = findViewById(R.id.mantener);
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.INVISIBLE);
+        setTitle("Voice control 1.0");
+        activateSpeechRecognitionButton.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    askForPermission();
+                    progressBar.setVisibility(View.VISIBLE);
+                    progressBar.setIndeterminate(true);
+                    createSpeech();
+                    speech.startListening(recognizerIntent);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    capturedVoiceCmd.setText("");
+                    statusListAdapter.clear();
+                    break;
             }
-        }*/
+            return false;
+        });
+
+        checkStatusOnDemand = findViewById(R.id.status);
+        checkStatusOnDemand.setOnTouchListener((v, event) -> {
+            ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
+            rp.setCheckIfTimePassedAfterLastStatus(false);
+            RestClient rc = new RestClient(getApplicationContext());
+            rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
+                    null, rp);
+            return false;
+        });
+
+        List<String> listItem = new ArrayList<>();
+        statusList = findViewById(R.id.statusList);
+        statusListAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_selectable_list_item, android.R.id.text1, listItem);
+        statusList.setAdapter(statusListAdapter);
+        //statusList.setOnItemClickListener(new ClickListener(this));
+
+        Button buttonOpenSecondActivity = findViewById(R.id.goToStatus);
+        buttonOpenSecondActivity.setOnTouchListener((v, event) -> {
+            Intent intent = new Intent(MainActivity.this, StatusActivity.class);
+            startActivity(intent);
+            return false;
+        });
+
+    }
+
+    private void createSpeech() {
+        if (speech != null) {
+            speech.destroy();
+        }
+        speech = SpeechRecognizer.createSpeechRecognizer(this);
+        speech.setRecognitionListener(this);
+        recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en");
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
+                this.getPackageName());
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+    }
+
+    private void askForPermission() {
+        String permission = "android.permission.RECORD_AUDIO";
+        if (ContextCompat.checkSelfPermission(MainActivity.this, permission) !=
+                PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                    permission)) {
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{permission}, 1);
+            } else {
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{permission}, 1);
+            }
+        }
+    }
+
+    @Override
+    public void onBeginningOfSpeech() {
+        progressBar.setIndeterminate(false);
+        progressBar.setMax(10);
+    }
+
+    @Override
+    public void onRmsChanged(float rmsdB) {
+
+    }
+
+    @Override
+    public void onBufferReceived(byte[] buffer) {
+
+    }
+
+    @Override
+    public void onEndOfSpeech() {
+        progressBar.setIndeterminate(true);
+        //worked
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        progressBar.setIndeterminate(false);
+        progressBar.setVisibility(View.INVISIBLE);
+        //speech.stopListening();
+    }
+
+    @Override
+    public void onError(int errorCode) {
+        if (errorCode == SpeechRecognizer.ERROR_NO_MATCH) {
+            createSpeech();
+            speech.startListening(recognizerIntent);
+            return;
+        }
+        if (speech != null) {
+            speech.destroy();
+        }
+        progressBar.setIndeterminate(false);
+        progressBar.setVisibility(View.INVISIBLE);
+        String errorMessage = getErrorText(errorCode);
+        capturedVoiceCmd.setText(errorMessage);
+    }
+
+    public static String getErrorText(int errorCode) {
+        String message;
+        switch (errorCode) {
+            case SpeechRecognizer.ERROR_AUDIO:
+                message = "Audio recording error";
+                break;
+            case SpeechRecognizer.ERROR_CLIENT:
+                message = "Client retry";
+                break;
+            case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                message = "Insufficient permissions";
+                break;
+            case SpeechRecognizer.ERROR_NETWORK:
+                message = "Network error";
+                break;
+            case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                message = "Network timeout";
+                break;
+            case SpeechRecognizer.ERROR_NO_MATCH:
+                message = "No match";
+                break;
+            case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                message = "RecognitionService busy";
+                break;
+            case SpeechRecognizer.ERROR_SERVER:
+                message = "error from server";
+                break;
+            case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                message = "No speech input";
+                break;
+            default:
+                message = "Didn't understand, please try again.";
+                break;
+        }
+        return message;
+    }
+
+    private long lastClickTime = 0;
+
+    @Override
+    public void onResults(Bundle results) {
+        ArrayList<String> matches = results
+                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+
+        if (SystemClock.elapsedRealtime() - lastClickTime < 2000) {
+            return;
+        }
+        lastClickTime = SystemClock.elapsedRealtime();
+        if (matches.size() == 0) {
+            capturedVoiceCmd.setText("Listening Service Error");
+        } else {
+            capturedVoiceCmd.setText(matches.get(0));
+            //if (matches.get(0).equalsIgnoreCase("computer unlock")){
+            //String message = sendBroadcast("UNLOCK_MACHINE");
+            JSONObject jsonObject = new JSONObject();
+            JSONArray matchesArray = new JSONArray();
+            try {
+                for (String result : matches) {
+                    matchesArray.put(result);
+                }
+                jsonObject.put("possibleMessages", matchesArray);
+                ResponseProcessor rp = new EvaluateExecResponse(getApplicationContext());
+                RestClient rc = new RestClient(getApplicationContext());
+                rc.request(Request.Method.POST, "217.71.203.118", "8888/exec",
+                        jsonObject, rp);
+                //Toast.makeText(MainActivity.this, "respuesta de broad", Toast.LENGTH_SHORT).show();
+            } catch (JSONException e) {
+                Toast.makeText(MainActivity.this, "Error creating JSON message!",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            //}
+        }
+    }
+
+    @Override
+    public void onPartialResults(Bundle partialResults) {
+
+    }
+
+    @Override
+    public void onEvent(int eventType, Bundle params) {
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (speech == null) {
+            createSpeech();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (speech != null) {
+            speech.destroy();
+        }
     }
 
     public void startPeriodicWork() {
-        PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(
-                CheckWorker.class, // Clase que extiende Worker
-                5, // Intervalo mínimo de repetición
-                TimeUnit.MINUTES
-        ).addTag("CheckWorker")
 
-                .build();
+        List<WorkInfo> workInfos = WorkManager.getInstance(this)
+                .getWorkInfosByTagLiveData("myUnique").getValue();
+        if (workInfos == null) {
+            //Toast.makeText(getApplicationContext(), "instanteating works", Toast.LENGTH_SHORT).show();
+            PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(
+                    CheckWorker.class, // Clase que extiende Worker
+                    5, // Intervalo mínimo de repetición
+                    TimeUnit.MINUTES
+            ).addTag("CheckWorker")
+                    .build();
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork("myUnique"
+                    , ExistingPeriodicWorkPolicy.REPLACE, periodicWorkRequest);
+        }
 
-        //WorkManager.getInstance().cancelAllWorkByTag("CheckWorker");
-        WorkManager.getInstance().enqueueUniquePeriodicWork("myUnique"
-                , ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest);
-        List<WorkInfo> workInfos = WorkManager.getInstance()
-                .getWorkInfosByTagLiveData("CheckWorker").getValue();
-        //Toast.makeText(getApplicationContext(), workInfos.size(), Toast.LENGTH_SHORT).show();
     }
 
     public void onToggleClick(View v) {
 
-        EvaluateResponse er = new EvaluateResponse(getApplicationContext());
+        EvaluateStatusResponse er = new EvaluateStatusResponse(getApplicationContext());
         RestClient rc = new RestClient(getApplicationContext());
-        rc.request(Request.Method.POST, "217.71.203.118", "8888/exec",
+        rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
                 null, er);
         //String resp = Objects.requireNonNull(buttons.get(v.getId())).toggle();
         /*NotificationCompat.Builder notif = new NotificationCompat.Builder(getApplicationContext()

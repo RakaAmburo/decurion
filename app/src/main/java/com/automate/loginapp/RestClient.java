@@ -2,6 +2,8 @@ package com.automate.loginapp;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.RequestQueue;
@@ -18,12 +20,10 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -39,6 +39,16 @@ public class RestClient {
 
     public void request(int method, String domainOrIp, String port, JSONObject body,
                         ResponseProcessor er) {
+
+        if (er.checkIfTimePassedAfterLastStatus()){
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            long lastMessage = sp.getLong("lastMessage", 0);
+            long elapsed = System.currentTimeMillis() - lastMessage;
+            long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsed);
+            if (minutes < 5){
+                return;
+            }
+        }
 
         RequestQueue queue = Volley.newRequestQueue(context,
                 new HurlStack(null, newSslSocketFactory()));

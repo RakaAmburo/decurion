@@ -11,6 +11,8 @@ import com.android.volley.VolleyError;
 import org.json.JSONObject;
 
 public abstract class ResponseProcessor {
+
+    private boolean checkIfTimePassedAfterLastStatus;
     abstract void process(JSONObject response);
     abstract void processError(VolleyError ve);
     abstract void processError(String err);
@@ -31,5 +33,13 @@ public abstract class ResponseProcessor {
         }
 
         return message;
+    }
+
+    public boolean checkIfTimePassedAfterLastStatus(){
+        return checkIfTimePassedAfterLastStatus;
+    }
+
+    public void setCheckIfTimePassedAfterLastStatus(boolean doCheck){
+        checkIfTimePassedAfterLastStatus = doCheck;
     }
 }
