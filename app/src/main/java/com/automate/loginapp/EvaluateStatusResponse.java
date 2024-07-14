@@ -68,15 +68,27 @@ public class EvaluateStatusResponse extends ResponseProcessor {
             severity = resp.getInt("severity");
         }
 
-        List<String> alist = new ArrayList<>();
+        /*List<String> alist = new ArrayList<>();
         alist.add(message);
         SharedPreferencesHelper.storeEntityList(context, alist);
-        List<String> returnList = SharedPreferencesHelper.getEntityList(context);
+        List<String> returnList = SharedPreferencesHelper.getEntityList(context);*/
+        List<String> messages = jsonArrayToList(stringResponse);
+        StatusActivity.statusListAdapter.addAll(messages);
+
         Status st = new Status();
         st.setId(id);
-        st.setMessage(returnList.get(0));
+        st.setMessage(message);
         st.setSeverity(severity);
         return st;
+    }
+
+    public static List<String> jsonArrayToList(JSONArray jsonArray) throws JSONException {
+        List<String> list = new ArrayList<>();
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject jsonObject = (JSONObject) jsonArray.get(0);
+            list.add(jsonObject.getString("message"));
+        }
+        return list;
     }
 
     private void notify(@NonNull Context context, String message, int severity) {

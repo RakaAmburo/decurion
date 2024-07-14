@@ -88,11 +88,21 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
 
         checkStatusOnDemand = findViewById(R.id.status);
         checkStatusOnDemand.setOnTouchListener((v, event) -> {
-            ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
-            rp.setCheckIfTimePassedAfterLastStatus(false);
-            RestClient rc = new RestClient(getApplicationContext());
-            rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
-                    null, rp);
+           Intent intent = new Intent(MainActivity.this, StatusActivity.class);
+            startActivity(intent);
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
+                    rp.setCheckIfTimePassedAfterLastStatus(false);
+                    RestClient rc = new RestClient(getApplicationContext());
+                    rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
+                            null, rp);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    /*capturedVoiceCmd.setText("");
+                    statusListAdapter.clear();*/
+                    break;
+            }
             return false;
         });
 
