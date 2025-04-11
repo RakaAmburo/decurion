@@ -7,6 +7,14 @@ public class Status {
     private String message;
     private int severity;
 
+    public long getTime() {
+        return time;
+    }
+    public void setTime(long time) {
+        this.time = time;
+    }
+    private long time;
+
     public String getId() {
         return id;
     }

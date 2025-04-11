@@ -88,7 +88,7 @@ public class CheckWorker extends Worker {
         //notify(getApplicationContext());
         ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
         RestClient rc = new RestClient(getApplicationContext());
-        rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
+        rc.request(Request.Method.GET, SecuredProperties.publicIp, SecuredProperties.portAndStatusPath,
                 null, rp);
         return Result.success();
     }

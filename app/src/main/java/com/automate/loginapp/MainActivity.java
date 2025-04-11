@@ -88,15 +88,15 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
 
         checkStatusOnDemand = findViewById(R.id.status);
         checkStatusOnDemand.setOnTouchListener((v, event) -> {
-           Intent intent = new Intent(MainActivity.this, StatusActivity.class);
-            startActivity(intent);
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
                     rp.setCheckIfTimePassedAfterLastStatus(false);
                     RestClient rc = new RestClient(getApplicationContext());
-                    rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
+                    rc.request(Request.Method.GET, SecuredProperties.publicIp, SecuredProperties.portAndStatusPath,
                             null, rp);
+                    Intent intent = new Intent(MainActivity.this, StatusActivity.class);
+                    startActivity(intent);
                     break;
                 case MotionEvent.ACTION_UP:
                     /*capturedVoiceCmd.setText("");
@@ -261,7 +261,7 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
                 jsonObject.put("possibleMessages", matchesArray);
                 ResponseProcessor rp = new EvaluateExecResponse(getApplicationContext());
                 RestClient rc = new RestClient(getApplicationContext());
-                rc.request(Request.Method.POST, "217.71.203.118", "8888/exec",
+                rc.request(Request.Method.POST, SecuredProperties.publicIp, SecuredProperties.portAndExecPath,
                         jsonObject, rp);
                 //Toast.makeText(MainActivity.this, "respuesta de broad", Toast.LENGTH_SHORT).show();
             } catch (JSONException e) {
@@ -321,7 +321,7 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
 
         EvaluateStatusResponse er = new EvaluateStatusResponse(getApplicationContext());
         RestClient rc = new RestClient(getApplicationContext());
-        rc.request(Request.Method.GET, "217.71.203.118", "8888/status",
+        rc.request(Request.Method.GET, SecuredProperties.publicIp, SecuredProperties.portAndStatusPath,
                 null, er);
         //String resp = Objects.requireNonNull(buttons.get(v.getId())).toggle();
         /*NotificationCompat.Builder notif = new NotificationCompat.Builder(getApplicationContext()

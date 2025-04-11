@@ -21,6 +21,7 @@ import org.json.JSONObject;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +41,9 @@ public class EvaluateStatusResponse extends ResponseProcessor {
             Status st = getText(response);
             notify(context, st.getMessage(), st.getSeverity());
         } catch (Exception e) {
-            notify(context, "error parsing", 1);
+            notify(context, e.getMessage(), 1);
+            /*StatusActivity.statusListAdapter
+                    .addAll("error parsing status: " + e.getMessage());*/
         }
     }
 
@@ -48,6 +51,8 @@ public class EvaluateStatusResponse extends ResponseProcessor {
     public void processError(VolleyError ve) {
         String message = basicErrorProcessing(ve);
         notify(context, message, 1);
+        //agregar a la lista de errores helper
+        //SharedPreferencesHelper
     }
 
     @Override
@@ -61,6 +66,18 @@ public class EvaluateStatusResponse extends ResponseProcessor {
         int severity = 3;
         String id = "";
         JSONArray stringResponse = response.getJSONArray("events");
+        LinkedList<Status> eventsList = SharedPreferencesHelper.getEntityList(context);
+        for (int i = 0; i < stringResponse.length(); i++) {
+            Status status = new Status();
+            status.setTime(System.currentTimeMillis());
+            JSONObject resp = (JSONObject)stringResponse.get(i);
+            status.setSeverity(resp.getInt("severity"));
+            status.setId(resp.getString("id"));
+            status.setMessage(resp.getString("message"));
+            SharedPreferencesHelper.addItemToFront(eventsList, status);
+        }
+        SharedPreferencesHelper.storeEntityList(context, eventsList);
+
         JSONObject resp = (JSONObject) stringResponse.get(0);
         if (resp != null) {
             id = resp.getString("id");
@@ -68,12 +85,15 @@ public class EvaluateStatusResponse extends ResponseProcessor {
             severity = resp.getInt("severity");
         }
 
+
+
+
         /*List<String> alist = new ArrayList<>();
         alist.add(message);
         SharedPreferencesHelper.storeEntityList(context, alist);
-        List<String> returnList = SharedPreferencesHelper.getEntityList(context);*/
+        List<String> returnList = SharedPreferencesHelper.getEntityList(context);
         List<String> messages = jsonArrayToList(stringResponse);
-        StatusActivity.statusListAdapter.addAll(messages);
+        StatusActivity.statusListAdapter.addAll(messages);*/
 
         Status st = new Status();
         st.setId(id);

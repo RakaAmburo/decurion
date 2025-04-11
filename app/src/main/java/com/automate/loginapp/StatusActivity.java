@@ -8,8 +8,15 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class StatusActivity extends Activity {
 
@@ -20,10 +27,14 @@ public class StatusActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_status);
 
-        List<String> listItem = new ArrayList<>();
+        LinkedList<Status> storedStatusList = SharedPreferencesHelper
+                .getEntityList(getApplicationContext());
+        List<String> messages = storedStatusList.stream()
+                .map(item -> item.getMessage() + " - " + formatTime(item.getTime()))
+                .collect(Collectors.toList());
         statusList = findViewById(R.id.statusList);
         statusListAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_selectable_list_item, android.R.id.text1, listItem);
+                android.R.layout.simple_selectable_list_item, android.R.id.text1, messages);
         statusList.setAdapter(statusListAdapter);
 
         Button buttonOpenSecondActivity = findViewById(R.id.goToMain);
@@ -34,6 +45,12 @@ public class StatusActivity extends Activity {
                 startActivity(intent);
             }
         });
+    }
+
+    private String formatTime(long t){
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        String time = sdf.format(new Date(t));
+        return time;
     }
 
 }

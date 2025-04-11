@@ -79,7 +79,7 @@ public class RestClient {
             InputStream in = context.getApplicationContext().getResources()
                     .openRawResource(R.raw.android);
             try {
-                trusted.load(in, "PedritoClavo1Clavito".toCharArray());//SignUtil.KEYSTORE_PASSWORD
+                trusted.load(in, SecuredProperties.KEYSTORE_PASSWORD);
             } finally {
                 in.close();
             }
@@ -106,7 +106,7 @@ public class RestClient {
 
             String kmAlg = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmAlg);
-            kmf.init(trusted, "PedritoClavo1Clavito".toCharArray());//SignUtil.KEYSTORE_PASSWORD
+            kmf.init(trusted, SecuredProperties.KEYSTORE_PASSWORD);
 
             SSLContext context = SSLContext.getInstance("TLS");
             context.init(kmf.getKeyManagers(), trustAllCerts, new SecureRandom());
