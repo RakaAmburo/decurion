@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "990356262266",
+    "project_id": "centurion-alert-system",
+    "storage_bucket": "centurion-alert-system.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:990356262266:android:1d41768871f81a80051ac3",
+        "android_client_info": {
+          "package_name": "com.automate.loginapp.switch.buttons"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVbFuOLr0GIVXX4Ma-bZEGEVTRenMGtT8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

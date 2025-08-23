@@ -1,4 +1,4 @@
-package com.automate.loginapp;
+package com.automate.decurion;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -8,7 +8,6 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.LinkedList;
-import java.util.List;
 
 public class SharedPreferencesHelper {
     private static final String PREFS_NAME = "CenturionPreferences";

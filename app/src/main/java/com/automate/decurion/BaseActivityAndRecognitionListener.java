@@ -1,4 +1,4 @@
-package com.automate.loginapp;
+package com.automate.decurion;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;

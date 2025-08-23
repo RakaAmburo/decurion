@@ -1,4 +1,4 @@
-package com.automate.loginapp;
+package com.automate.decurion;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;

@@ -1,4 +1,4 @@
-package com.automate.loginapp;
+package com.automate.decurion;
 
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
