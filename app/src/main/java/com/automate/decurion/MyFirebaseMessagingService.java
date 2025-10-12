@@ -4,8 +4,14 @@ import com.android.volley.Request;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,21 +30,58 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
      */
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        // Loguear el mensaje recibido para la depuración
-        Log.d(TAG, "Mensaje recibido de: " + remoteMessage.getFrom());
+        super.onMessageReceived(remoteMessage);
 
-        // Comprobar si el mensaje contiene una carga de datos
-        if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Carga de datos del mensaje: " + remoteMessage.getData());
-        }
-
-        // Comprobar si el mensaje contiene una notificación
+        // Verifica si el mensaje contiene una notificación (título y cuerpo).
         if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Cuerpo de la notificación: " + remoteMessage.getNotification().getBody());
+            String title = remoteMessage.getNotification().getTitle();
+            String body = remoteMessage.getNotification().getBody();
+
+            // Llama a la función para mostrar la notificación localmente
+            sendNotification(title, body);
         }
 
-        // Aquí puedes añadir tu lógica personalizada, como mostrar una notificación
-        // en la barra de estado del teléfono.
+        // Verifica si el mensaje contiene datos (útil para mensajes silenciosos)
+        if (remoteMessage.getData().size() > 0) {
+            // Aquí puedes procesar la data si es necesario, pero la notificación
+            // se maneja en el bloque anterior.
+        }
+    }
+
+    /**
+     * Muestra la notificación en la bandeja del sistema de forma local.
+     */
+    private void sendNotification(String title, String body) {
+        // 1. Define qué actividad abrir al hacer clic
+        // Asegúrate de cambiar 'MainActivity.class' a tu actividad principal
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+
+        // 2. Crea el constructor de la notificación
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this, "Your_channel_id")
+                        .setSmallIcon(R.drawable.baseline_warning_amber_24)
+                        .setContentTitle(title)
+                        .setContentText(body)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
+
+        // 3. Obtiene el gestor de notificaciones
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // 4. Crea el canal de notificación (necesario para Android 8.0/Oreo o superior)
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            notificationManager.createNotificationChannel(channel);
+        }*/
+
+        // 5. Muestra la notificación
+        notificationManager.notify(1 /* ID de la notificación */, notificationBuilder.build());
     }
 
     /**
