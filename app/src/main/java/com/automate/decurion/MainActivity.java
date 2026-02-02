@@ -11,6 +11,7 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -20,6 +21,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.work.ExistingPeriodicWorkPolicy;
@@ -28,6 +30,9 @@ import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import com.android.volley.Request;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,6 +50,7 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
     private TextView capturedVoiceCmd;
     private Button activateSpeechRecognitionButton;
     private Button checkStatusOnDemand;
+    private Button getFireBaseToken;
     private ProgressBar progressBar;
     private SpeechRecognizer speech = null;
     private Intent recognizerIntent;
@@ -97,6 +103,47 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
                             null, rp);
                     Intent intent = new Intent(MainActivity.this, StatusActivity.class);
                     startActivity(intent);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    /*capturedVoiceCmd.setText("");
+                    statusListAdapter.clear();*/
+                    break;
+            }
+            return false;
+        });
+
+        getFireBaseToken = findViewById(R.id.getToken);
+        getFireBaseToken.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    FirebaseMessaging.getInstance().getToken()
+                            .addOnCompleteListener(task -> {
+
+                                if (!task.isSuccessful()) {
+                                    Log.w("GetFBToken", "Fetching FCM registration token failed", task.getException());
+                                    return;
+                                }
+
+                                // Get new FCM registration token
+                                String token = task.getResult();
+
+                                JSONObject jsonObject = new JSONObject();
+                                JSONArray matchesArray = new JSONArray();
+                                JSONObject extrasObject = new JSONObject();
+                                try {
+                                    matchesArray.put("store new token");
+                                    jsonObject.put("possibleMessages", matchesArray);
+                                    extrasObject.put("token", token);
+                                    jsonObject.put("extras", extrasObject);
+                                    ResponseProcessor rp = new EvaluateExecResponse(getApplicationContext());
+                                    RestClient rc = new RestClient(getApplicationContext());
+                                    rc.request(Request.Method.POST, SecuredProperties.publicIp, SecuredProperties.portAndExecPath,
+                                            jsonObject, rp);
+                                    Toast.makeText(MainActivity.this, "Token enviado", Toast.LENGTH_SHORT).show();
+                                } catch (JSONException e) {
+                                    Log.d("GetFBToken", "Error creating JSON message!" + e.getMessage());
+                                }
+                            });
                     break;
                 case MotionEvent.ACTION_UP:
                     /*capturedVoiceCmd.setText("");

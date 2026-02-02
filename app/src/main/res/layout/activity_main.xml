@@ -14,11 +14,11 @@
         android:layout_height="85dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/button_image_mic"
         app:layout_constraintBottom_toTopOf="@+id/editText"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.258"
+        app:layout_constraintHorizontal_bias="0.051"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
@@ -30,7 +30,7 @@
         android:layout_marginBottom="20dp"
         android:background="@drawable/baseline_question_mark_24"
         app:layout_constraintBottom_toTopOf="@+id/editText"
-        app:layout_constraintHorizontal_bias="0.616"
+        app:layout_constraintHorizontal_bias="0.373"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
@@ -41,9 +41,22 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginBottom="20dp"
-        android:background="@drawable/ic_launcher_foreground"
+        android:background="@drawable/baseline_history_24"
         app:layout_constraintBottom_toTopOf="@+id/editText"
-        app:layout_constraintHorizontal_bias="0.861"
+        app:layout_constraintHorizontal_bias="0.641"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <Button
+        android:id="@+id/getToken"
+        android:layout_width="55dp"
+        android:layout_height="64dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/baseline_fingerprint_24"
+        app:layout_constraintBottom_toTopOf="@+id/editText"
+        app:layout_constraintHorizontal_bias="0.888"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
