@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.speech.RecognizerIntent;
@@ -60,7 +62,7 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //createNotificationChannel();
+        createNotificationChannel();
         setContentView(R.layout.activity_main);
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (!sp.contains("lastMessage")) {
@@ -82,7 +84,9 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
                     progressBar.setVisibility(View.VISIBLE);
                     progressBar.setIndeterminate(true);
                     createSpeech();
-                    speech.startListening(recognizerIntent);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        speech.startListening(recognizerIntent);
+                    }, 150);
                     break;
                 case MotionEvent.ACTION_UP:
                     capturedVoiceCmd.setText("");
@@ -118,12 +122,10 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
                 case MotionEvent.ACTION_DOWN:
                     FirebaseMessaging.getInstance().getToken()
                             .addOnCompleteListener(task -> {
-
                                 if (!task.isSuccessful()) {
                                     Log.w("GetFBToken", "Fetching FCM registration token failed", task.getException());
                                     return;
                                 }
-
                                 // Get new FCM registration token
                                 String token = task.getResult();
 
@@ -171,8 +173,15 @@ public class MainActivity extends BaseActivityAndRecognitionListener {
 
     private void createSpeech() {
         if (speech != null) {
+            speech.stopListening();
+            speech.cancel();
             speech.destroy();
+            speech = null;
         }
+        /*new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            speech = SpeechRecognizer.createSpeechRecognizer(this);
+            speech.setRecognitionListener(this);
+        }, 100);*/
         speech = SpeechRecognizer.createSpeechRecognizer(this);
         speech.setRecognitionListener(this);
         recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
