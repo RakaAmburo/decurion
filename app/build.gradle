@@ -78,7 +78,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
 }
 
-task backApk(group: "MyTools", description: "Copy APK to output folder with rotation") {
+task backApk(group: "MyTools", description: "Copy APK to output folder with rotation", dependsOn: "assembleDebug") {
     doLast {
         def backupDir = file("C:\\Users\\pablo\\Dropbox\\CenturionBack")
         def apk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
