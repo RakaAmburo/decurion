@@ -19,6 +19,9 @@ public class StatusActivity extends Activity {
 
     public ListView statusList;
     public static ArrayAdapter<String> statusListAdapter;
+    public ListView errorList;
+    public static ArrayAdapter<String> errorListAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,6 +29,7 @@ public class StatusActivity extends Activity {
 
         LinkedList<Status> storedStatusList = SharedPreferencesHelper
                 .getEntityList(getApplicationContext());
+        if (storedStatusList == null) storedStatusList = new LinkedList<>();
         List<String> messages = storedStatusList.stream()
                 .map(item -> item.getMessage() + " - " + formatTime(item.getTime()))
                 .collect(Collectors.toList());
@@ -33,6 +37,16 @@ public class StatusActivity extends Activity {
         statusListAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_selectable_list_item, android.R.id.text1, messages);
         statusList.setAdapter(statusListAdapter);
+
+        LinkedList<Status> storedErrorList = SharedPreferencesHelper
+                .getErrorList(getApplicationContext());
+        List<String> errorMessages = storedErrorList.stream()
+                .map(item -> item.getMessage() + " - " + formatTime(item.getTime()))
+                .collect(Collectors.toList());
+        errorList = findViewById(R.id.errorList);
+        errorListAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_selectable_list_item, android.R.id.text1, errorMessages);
+        errorList.setAdapter(errorListAdapter);
 
         Button buttonOpenSecondActivity = findViewById(R.id.goToMain);
         buttonOpenSecondActivity.setOnClickListener(new View.OnClickListener() {

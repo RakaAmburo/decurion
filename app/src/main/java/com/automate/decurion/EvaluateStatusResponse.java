@@ -49,8 +49,7 @@ public class EvaluateStatusResponse extends ResponseProcessor {
     public void processError(VolleyError ve) {
         String message = basicErrorProcessing(ve);
         notify(context, message, 1);
-        //agregar a la lista de errores helper
-        //SharedPreferencesHelper
+        SharedPreferencesHelper.addErrorToFront(context, message != null ? message : "UnknownError");
     }
 
     @Override
