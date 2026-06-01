@@ -8,6 +8,7 @@ import android.preference.PreferenceManager;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
@@ -67,11 +68,19 @@ public class RestClient {
                         return headers;
                     }
                 };
-        jsonRequest.setShouldRetryServerErrors(true);
-        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(
-                7000,
-                5,
-                2f));
+        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(8000, 4, 2f) {
+            private int retryCount = 0;
+
+            @Override
+            public void retry(VolleyError error) throws VolleyError {
+                if (retryCount < 5) {
+                    retryCount++;
+                    super.retry(error);  // Esto respeta el backoff de 2f
+                    return;
+                }
+                throw error;
+            }
+        });
         queue.add(jsonRequest);
     }
 
