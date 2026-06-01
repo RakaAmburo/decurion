@@ -68,8 +68,10 @@ public class RestClient {
                     }
                 };
         jsonRequest.setShouldRetryServerErrors(true);
-        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(10000, 3,
-                1f));
+        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(
+                8000,
+                4,
+                2f));
         queue.add(jsonRequest);
     }
 
