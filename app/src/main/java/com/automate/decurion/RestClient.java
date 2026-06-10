@@ -68,19 +68,10 @@ public class RestClient {
                         return headers;
                     }
                 };
-        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(8000, 4, 2f) {
-            private int retryCount = 0;
 
-            @Override
-            public void retry(VolleyError error) throws VolleyError {
-                if (retryCount < 5) {
-                    retryCount++;
-                    super.retry(error);  // Esto respeta el backoff de 2f
-                    return;
-                }
-                throw error;
-            }
-        });
+        jsonRequest.setShouldRetryServerErrors(true);
+        jsonRequest.setShouldRetryConnectionErrors(true);
+        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(20000, 6, 1f));
         queue.add(jsonRequest);
     }
 
