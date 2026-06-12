@@ -39,7 +39,9 @@ public class EvaluateStatusResponse extends ResponseProcessor {
             Status st = getText(response);
             notify(context, st.getMessage(), st.getSeverity());
         } catch (Exception e) {
-            notify(context, e.getMessage(), 1);
+            String message = "StatusParseError: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+            notify(context, message, 1);
+            SharedPreferencesHelper.addErrorToFront(context, message);
             /*StatusActivity.statusListAdapter
                     .addAll("error parsing status: " + e.getMessage());*/
         }
@@ -59,10 +61,23 @@ public class EvaluateStatusResponse extends ResponseProcessor {
 
     private Status getText(JSONObject response) throws JSONException {
         //Map resp = new HashMap();
+        if (response == null) {
+            throw new JSONException("response is null");
+        }
+
         String message = "empty";
         int severity = 3;
         String id = "";
         JSONArray stringResponse = response.getJSONArray("events");
+
+        if (stringResponse == null || stringResponse.length() == 0) {
+            Status emptyStatus = new Status();
+            emptyStatus.setId("none");
+            emptyStatus.setMessage("No events");
+            emptyStatus.setSeverity(3);
+            return emptyStatus;
+        }
+
         LinkedList<Status> eventsList = SharedPreferencesHelper.getEntityList(context);
         for (int i = 0; i < stringResponse.length(); i++) {
             Status status = new Status();

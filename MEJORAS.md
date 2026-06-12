@@ -1,5 +1,9 @@
 # Mejoras futuras — Decurion
 
+> Documento complementario de foco técnico: `FIABILIDAD_RED_BACKGROUND_ANDROID.md`
+
+> Actualizacion 2026-06-12: hubo regresion por cambios agresivos de scheduler en pruebas de timeout/background; se hizo rollback. Retomar con cambios minimos y uno por vez (detalle en `FIABILIDAD_RED_BACKGROUND_ANDROID.md`).
+
 ## 🔴 Bugs / errores
 
 ### 1. `RequestQueue` se instancia en cada request — memory leak

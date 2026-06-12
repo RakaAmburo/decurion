@@ -26,13 +26,20 @@ public class SharedPreferencesHelper {
     public static LinkedList<Status> getEntityList(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String json = sharedPreferences.getString(LIST_KEY, null);
+        if (json == null) {
+            return new LinkedList<>();
+        }
         Gson gson = new Gson();
         Type type = new TypeToken<LinkedList<Status>>() {
         }.getType();
-        return gson.fromJson(json, type);
+        LinkedList<Status> list = gson.fromJson(json, type);
+        return list != null ? list : new LinkedList<>();
     }
 
     public static void addItemToFront(LinkedList<Status> linkedList, Status item) {
+        if (linkedList == null) {
+            return;
+        }
         linkedList.addFirst(item);
         if (linkedList.size() > 5) {
             linkedList.removeLast();

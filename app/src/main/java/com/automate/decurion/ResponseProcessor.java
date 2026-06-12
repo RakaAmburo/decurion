@@ -17,9 +17,13 @@ public abstract class ResponseProcessor {
     abstract void processError(VolleyError ve);
     abstract void processError(String err);
     String basicErrorProcessing(VolleyError volleyError){
-        String message = null;
+        if (volleyError == null) {
+            return "VolleyError:null";
+        }
+
+        String message = "UnknownVolleyError";
         if (volleyError instanceof NoConnectionError) {
-            message = "" + volleyError.getMessage();
+            message = "NoConnectionError";
         } else if (volleyError instanceof ServerError) {
             message = "ServerError";
         } else if (volleyError instanceof AuthFailureError) {
@@ -30,6 +34,14 @@ public abstract class ResponseProcessor {
             message = "NetworkError";
         } else if (volleyError instanceof TimeoutError) {
             message = "TimeoutError";
+        }
+
+        if (volleyError.networkResponse != null) {
+            message += "(HTTP " + volleyError.networkResponse.statusCode + ")";
+        }
+
+        if (volleyError.getMessage() != null && !volleyError.getMessage().isEmpty()) {
+            message += ": " + volleyError.getMessage();
         }
 
         return message;
