@@ -21,7 +21,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class CheckWorker extends Worker {
@@ -85,11 +87,56 @@ public class CheckWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        //notify(getApplicationContext());
-        ResponseProcessor rp = new EvaluateStatusResponse(getApplicationContext());
-        RestClient rc = new RestClient(getApplicationContext());
-        rc.request(Request.Method.GET, SecuredProperties.publicIp, SecuredProperties.portAndStatusPath,
-                null, rp);
+        Context ctx = getApplicationContext();
+        RestClient rc = new RestClient(ctx);
+
+        // --- Health check ---
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicBoolean healthOk = new AtomicBoolean(false);
+
+        ResponseProcessor healthProcessor = new ResponseProcessor() {
+            @Override void process(org.json.JSONObject response) { healthOk.set(true); latch.countDown(); }
+            @Override void processError(com.android.volley.VolleyError ve) { latch.countDown(); }
+            @Override void processError(String err) { latch.countDown(); }
+        };
+        healthProcessor.setCheckIfTimePassedAfterLastStatus(false);
+
+        rc.request(Request.Method.GET, SecuredProperties.publicIp,
+                SecuredProperties.portAndHealthPath, null, healthProcessor);
+
+        try { latch.await(15, TimeUnit.SECONDS); }
+        catch (InterruptedException e) { Thread.currentThread().interrupt(); return Result.retry(); }
+
+        if (!healthOk.get()) {
+            int failures = SharedPreferencesHelper.incrementHealthFailures(ctx);
+            String msg = "HealthFailed #" + failures;
+            SharedPreferencesHelper.addErrorToFront(ctx, msg);
+            if (failures >= 6) {
+                notifyHealthDown(ctx, failures);
+            }
+            return Result.failure();
+        }
+
+        // Health ok — reset counter, call /status as before (fire and forget)
+        SharedPreferencesHelper.resetHealthFailures(ctx);
+        ResponseProcessor rp = new EvaluateStatusResponse(ctx);
+        rp.setCheckIfTimePassedAfterLastStatus(false);
+        rc.request(Request.Method.GET, SecuredProperties.publicIp,
+                SecuredProperties.portAndStatusPath, null, rp);
         return Result.success();
+    }
+
+    private void notifyHealthDown(Context ctx, int failureCount) {
+        NotificationCompat.Builder notif = new NotificationCompat.Builder(ctx, "Your_channel_id")
+                .setSmallIcon(R.drawable.baseline_lock_24)
+                .setContentTitle("Servidor no responde")
+                .setContentText("Health check fallido " + failureCount + " veces seguidas")
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setAutoCancel(true);
+        NotificationManagerCompat nm = NotificationManagerCompat.from(ctx);
+        if (ActivityCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            nm.notify(199, notif.build());
+        }
     }
 }

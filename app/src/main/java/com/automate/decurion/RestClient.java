@@ -71,7 +71,7 @@ public class RestClient {
 
         jsonRequest.setShouldRetryServerErrors(true);
         jsonRequest.setShouldRetryConnectionErrors(true);
-        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(20000, 6, 1f));
+        jsonRequest.setRetryPolicy(new DefaultRetryPolicy(10000, 3, 1f));
         queue.add(jsonRequest);
     }
 

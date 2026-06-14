@@ -64,6 +64,25 @@ public class SharedPreferencesHelper {
         return list != null ? list : new LinkedList<>();
     }
 
+    private static final String HEALTH_FAIL_KEY = "healthFailCount";
+
+    public static int getHealthFailureCount(Context context) {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getInt(HEALTH_FAIL_KEY, 0);
+    }
+
+    public static int incrementHealthFailures(Context context) {
+        SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        int count = sp.getInt(HEALTH_FAIL_KEY, 0) + 1;
+        sp.edit().putInt(HEALTH_FAIL_KEY, count).apply();
+        return count;
+    }
+
+    public static void resetHealthFailures(Context context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putInt(HEALTH_FAIL_KEY, 0).apply();
+    }
+
     public static void addErrorToFront(Context context, String errorMessage) {
         LinkedList<Status> errors = getErrorList(context);
         Status err = new Status();
